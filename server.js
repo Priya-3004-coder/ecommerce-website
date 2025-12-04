@@ -15,25 +15,35 @@ dotenv.config();
 connectDB();
 //const __filename=fileURLToPath(import.meta.url);
 //const __dirname=path.dirname(__filename);
-const app=express();
+const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: ['https://priya-3004-coder.github.io', 'http://localhost:3000'],
+    credentials: true
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 //app.use(express.static(path.join(__dirname,'./client/build')))
 
-app.use('/api/v1/auth',authRoutes)
-app.use("/api/v1/category",categoryRoutes)
-app.use('/api/v1/product',productRoutes)
+app.use('/api/v1/auth', authRoutes)
+app.use("/api/v1/category", categoryRoutes)
+app.use('/api/v1/product', productRoutes)
 
 //app.use('*',function(req,res){
-   // res.sendFile(path.join(__dirname,'./client/build/index.html'));
+// res.sendFile(path.join(__dirname,'./client/build/index.html'));
 //});
 
-app.get('/',(req,res)=>{
+app.get('/', (req, res) => {
     res.send("<h1>Welcome to Ecommerce App</h1>");
 });
-const PORT=process.env.PORT || 8080;
-app.listen(PORT,()=>{
-    console.log(`Server running on ${process.env.DEV_MODE} mode on port ${PORT}`.bgCyan.white);
-});
+const PORT = process.env.PORT || 8080;
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server running on ${process.env.DEV_MODE} mode on port ${PORT}`.bgCyan.white);
+    });
+}
+
+// Export for Vercel
+export default app;
