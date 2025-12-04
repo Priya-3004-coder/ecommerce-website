@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend API Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .test-group {
+            margin-bottom: 15px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            border-left-color: #28a745;
+        }
+
+        .error {
+            border-left-color: #dc3545;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+        }
+
+        input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            width: 300px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 Backend API Tester</h1>
+
+        <div class="section">
+            <h2>🔌 Server Status</h2>
+            <button onclick="checkServer()">Check Server</button>
+            <span id="serverStatus"></span>
+            <div id="serverResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔐 Authentication</h2>
+            <div class="test-group">
+                <h3>Login</h3>
+                <input type="email" id="loginEmail" placeholder="Email" value="test@example.com">
+                <input type="password" id="loginPassword" placeholder="Password" value="123456">
+                <button onclick="testLogin()">Login</button>
+                <div id="loginResult" class="result" style="display:none;"></div>
+            </div>
+            <div class="test-group">
+                <h3>Register</h3>
+                <input type="text" id="regName" placeholder="Name" value="Test User">
+                <input type="email" id="regEmail" placeholder="Email" value="newuser@example.com">
+                <input type="password" id="regPassword" placeholder="Password" value="123456">
+                <input type="text" id="regPhone" placeholder="Phone" value="1234567890">
+                <input type="text" id="regAddress" placeholder="Address" value="Test Address">
+                <input type="text" id="regAnswer" placeholder="Security Answer" value="test">
+                <button onclick="testRegister()">Register</button>
+                <div id="registerResult" class="result" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📦 Categories</h2>
+            <button onclick="testGetCategories()">Get All Categories</button>
+            <button onclick="testCreateCategory()">Create Category (Admin)</button>
+            <div id="categoryResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🛍️ Products</h2>
+            <button onclick="testGetProducts()">Get All Products</button>
+            <button onclick="testGetProductCount()">Get Product Count</button>
+            <button onclick="testSearchProducts()">Search Products</button>
+            <button onclick="testGetProductsPaginated()">Get Products (Page 1)</button>
+            <div id="productResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>💳 Payment</h2>
+            <button onclick="testGetBraintreeToken()">Get Braintree Token</button>
+            <div id="paymentResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Orders</h2>
+            <button onclick="testGetOrders()">Get My Orders</button>
+            <button onclick="testGetAllOrders()">Get All Orders (Admin)</button>
+            <div id="orderResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        let authToken = localStorage.getItem('authToken') || '';
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = isError ? 'result error' : 'result success';
+            element.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        async function checkServer() {
+            const statusEl = document.getElementById('serverStatus');
+            try {
+                const response = await fetch(`${API_BASE}/product/get-product`);
+                const data = await response.json();
+                statusEl.innerHTML = '<span class="status connected">✓ Connected</span>';
+                showResult('serverResult', { status: 'Server is running', products: data.countTotal });
+            } catch (error) {
+                statusEl.innerHTML = '<span class="status disconnected">✗ Disconnected</span>';
+                showResult('serverResult', { error: 'Server is not running or not accessible' }, true);
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    authToken = data.token;
+                    localStorage.setItem('authToken', authToken);
+                    showResult('loginResult', { ...data, note: 'Token saved! You can now test protected routes.' });
+                } else {
+                    showResult('loginResult', data, true);
+                }
+            } catch (error) {
+                showResult('loginResult', { error: error.message }, true);
+            }
+        }
+
+        async function testRegister() {
+            const userData = {
+                name: document.getElementById('regName').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                phone: document.getElementById('regPhone').value,
+                address: document.getElementById('regAddress').value,
+                answer: document.getElementById('regAnswer').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
+                const data = await response.json();
+                showResult('registerResult', data, !data.success);
+            } catch (error) {
+                showResult('registerResult', { error: error.message }, true);
+            }
+        }
+
+        async function testGetCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/category/get-category`);
+                const data = await response.json();
+                showResult('categoryResult', data, !data.success);
+            } catch (error) {
+                showResult('categoryResult', { error: error.message }, true);
+            }
+        }
+
+        async function testCreateCategory() {
+            if (!authToken) {
+                showResult('categoryResult', { error: 'Please login first!' }, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/category/create-category`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': authToken
+                    },
+                    body: JSON.stringify({ name: 'Test Category ' + Date.now() })
+                });
+                const data = await response.json();
+                showResult('categoryResult', data, !data.success);
+            } catch (error) {
+                showResult('categoryResult', { error: error.message }, true);
+            }
+        }
+
+        async function testGetProducts() {
+            try {
+                const response = await fetch(`${API_BASE}/product/get-product`);
+                const data = await response.json();
+                showResult('productResult', data, !data.success);
+            } catch (error) {
+                showResult('productResult', { error: error.message }, true);
+            }
+        }
+
+        async function testGetProductCount() {
+            try {
+                const response = await fetch(`${API_BASE}/product/product-count`);
+                const data = await response.json();
+                showResult('productResult', data, !data.success);
+            } catch (error) {
+                showResult('productResult', { error: error.message }, true);
+            }
+        }
+
+        async function testSearchProducts() {
+            try {
+                const response = await fetch(`${API_BASE}/product/search/test`);
+                const data = await response.json();
+                showResult('productResult', data);
+            } catch (error) {
+                showResult('productResult', { error: error.message }, true);
+            }
+        }
+
+        async function testGetProductsPaginated() {
+            try {
+                const response = await fetch(`${API_BASE}/product/product-list/1`);
+                const data = await response.json();
+                showResult('productResult', data, !data.success);
+            } catch (error) {
+                showResult('productResult', { error: error.message }, true);
+            }
+        }
+
+        async function testGetBraintreeToken() {
+            try {
+                const response = await fetch(`${API_BASE}/product/braintree/token`);
+                const data = await response.json();
+                showResult('paymentResult', data, !data.success);
+            } catch (error) {
+                showResult('paymentResult', { error: error.message }, true);
+            }
+        }
+
+        async function testGetOrders() {
+            if (!authToken) {
+                showResult('orderResult', { error: 'Please login first!' }, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/orders`, {
+                    headers: { 'Authorization': authToken }
+                });
+                const data = await response.json();
+                showResult('orderResult', data);
+            } catch (error) {
+                showResult('orderResult', { error: error.message }, true);
+            }
+        }
+
+        async function testGetAllOrders() {
+            if (!authToken) {
+                showResult('orderResult', { error: 'Please login as admin first!' }, true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/all-orders`, {
+                    headers: { 'Authorization': authToken }
+                });
+                const data = await response.json();
+                showResult('orderResult', data);
+            } catch (error) {
+                showResult('orderResult', { error: error.message }, true);
+            }
+        }
+
+        // Check server on load
+        window.onload = () => {
+            checkServer();
+            if (authToken) {
+                document.getElementById('serverStatus').innerHTML += ' <span style="color: #28a745; font-size: 0.9rem;">(Token loaded)</span>';
+            }
+        };
+    </script>
+</body>
+
+</html>
