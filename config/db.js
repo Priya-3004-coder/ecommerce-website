@@ -1,12 +1,12 @@
 import mongoose from 'mongoose'
-const connectDB=async()=>{
-    try{
-        const conn=await mongoose.connect(process.env.MONGO_URL)
+const connectDB = async () => {
+    try {
+        const conn = await mongoose.connect(process.env.MONGO_URL)
         console.log(`Connected to mongodb database ${conn.connection.host}`.bgMagenta.white);
-    } catch(error){
+    } catch (error) {
         console.log(`Error in Mongodb ${error}`.bgRed.white)
     }
 }
 export default connectDB({
-    base:"/personal-portfolio",
+    base: "/ecommerce-website",
 });

@@ -217,6 +217,25 @@ const HomePage = () => {
                             </span>
                         </div>
 
+                        {products.length === 0 && !loading && (
+                            <div className='col-12 text-center py-5'>
+                                <div style={{
+                                    background: '#f8f9fa',
+                                    padding: '40px',
+                                    borderRadius: '15px',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                                }}>
+                                    <h3 style={{ color: '#667eea', marginBottom: '15px' }}>🚀 Backend Not Connected</h3>
+                                    <p style={{ fontSize: '1.1rem', color: '#666' }}>
+                                        This is a demo deployment. The backend API is not available on GitHub Pages.
+                                    </p>
+                                    <p style={{ color: '#999' }}>
+                                        To see products, run the backend locally at localhost:8080
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         <div className='row g-4'>
                             {products?.map((p) => (
                                 <div className='col-xl-3 col-lg-4 col-md-6 col-sm-6' key={p._id}>

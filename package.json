@@ -10,8 +10,9 @@
     "server": "nodemon server.js",
     "client": "npm start --prefix ./client",
     "dev": "concurrently \"npm run start\" \"npm run client\"",
+    "build": "npm run build --prefix ./client",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d client/build"
   },
   "keywords": [],
   "author": "Techinfoyt",
